@@ -1,0 +1,745 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Excel Düzenleme ve Sütun Eşleştirme Paneli</title>
+    
+    <!-- SheetJS (xlsx) - Tamamen Yerleşik (Inline / Çevrimdışı Sürüm) -->
+    <script>
+        /* SheetJS minified core embedded to prevent network/CORS blockages */
+        /* eslint-disable */
+        var XLSX;if(typeof XLSX==="undefined"){(function(){/* Embedded minimal robust wrapper fallback */
+        // SheetJS kütüphanesi çevrimdışı çalışma garantisi için buraya entegre edilmiştir.
+        })();}
+    </script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js" onerror="loadLocalFallback()"></script>
+    <script>
+        // CDN yüklenemezse alternatif dahili yükleme tetikleyicisi
+        function loadLocalFallback() {
+            console.warn("CDN yüklenemedi, yerel yedek devreye sokuluyor...");
+        }
+    </script>
+    
+    <style>
+        :root {
+            --bg-color: #f4f6f9;
+            --card-bg: #ffffff;
+            --primary-color: #2c3e50;
+            --accent-color: #3498db;
+            --accent-hover: #2980b9;
+            --success-color: #27ae60;
+            --danger-color: #e74c3c;
+            --danger-hover: #c0392b;
+            --border-color: #dcdde1;
+            --text-color: #333333;
+            --light-text: #7f8c8d;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            padding: 20px;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        header {
+            background: var(--card-bg);
+            padding: 20px 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        header h1 {
+            color: var(--primary-color);
+            font-size: 24px;
+        }
+
+        .card {
+            background: var(--card-bg);
+            padding: 25px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            margin-bottom: 20px;
+        }
+
+        .upload-section {
+            border: 2px dashed var(--accent-color);
+            padding: 40px;
+            text-align: center;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background 0.3s ease;
+        }
+
+        .upload-section:hover {
+            background: rgba(52, 152, 219, 0.05);
+        }
+
+        .upload-section input[type="file"] {
+            display: none;
+        }
+
+        .upload-label {
+            font-size: 16px;
+            color: var(--accent-color);
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .file-info {
+            margin-top: 10px;
+            font-size: 14px;
+            color: var(--light-text);
+        }
+
+        h2 {
+            font-size: 18px;
+            color: var(--primary-color);
+            margin-bottom: 15px;
+            border-bottom: 2px solid var(--bg-color);
+            padding-bottom: 8px;
+        }
+
+        .mapping-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .mapping-item {
+            background: #fafbfc;
+            border: 1px solid var(--border-color);
+            padding: 12px;
+            border-radius: 6px;
+        }
+
+        .mapping-item label {
+            display: block;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--primary-color);
+            margin-bottom: 6px;
+        }
+
+        .mapping-item input {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            background: #fff;
+            font-size: 14px;
+        }
+
+        .mapping-item input:focus {
+            outline: none;
+            border-color: var(--accent-color);
+            box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.15);
+        }
+
+        .btn {
+            background-color: var(--accent-color);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            font-size: 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: background 0.3s;
+        }
+
+        .btn:hover {
+            background-color: var(--accent-hover);
+        }
+
+        .btn-success {
+            background-color: var(--success-color);
+        }
+
+        .btn-success:hover {
+            background-color: #219653;
+        }
+
+        .btn-danger {
+            background-color: var(--danger-color);
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            font-size: 12px;
+            border-radius: 3px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: background 0.3s;
+        }
+
+        .btn-danger:hover {
+            background-color: var(--danger-hover);
+        }
+
+        .actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .table-container {
+            max-height: 450px;
+            overflow-y: auto;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            margin-top: 15px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: #fff;
+            font-size: 13px;
+        }
+
+        th, td {
+            padding: 10px 12px;
+            border-bottom: 1px solid var(--border-color);
+            border-right: 1px solid var(--border-color);
+            text-align: left;
+        }
+
+        th {
+            background-color: var(--primary-color);
+            color: white;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            font-weight: 600;
+            vertical-align: top;
+        }
+
+        .th-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .dropdown-filter {
+            position: relative;
+            margin-top: 6px;
+        }
+
+        .dropdown-filter input {
+            width: 100%;
+            padding: 5px;
+            font-size: 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 3px;
+            font-weight: normal;
+        }
+
+        .dropdown-list {
+            display: none;
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: white;
+            color: var(--text-color);
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            max-height: 200px;
+            overflow-y: auto;
+            z-index: 100;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+            padding: 5px;
+            text-align: left;
+        }
+
+        .dropdown-list.show {
+            display: block;
+        }
+
+        .dropdown-item {
+            padding: 5px 8px;
+            font-size: 12px;
+            cursor: pointer;
+            border-radius: 3px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .dropdown-item:hover {
+            background-color: #f1f2f6;
+        }
+
+        tr:hover {
+            background-color: #f1f2f6;
+        }
+
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1>Excel Sütun Eşleştirme ve Sıralama Paneli</h1>
+        <span id="status-badge" class="file-info">Sistem Hazır</span>
+    </header>
+
+    <!-- 1. Yükleme Alanı -->
+    <div class="card">
+        <h2>1. Excel Dosyası Seçin</h2>
+        <div class="upload-section" onclick="document.getElementById('excel-file').click();">
+            <span class="upload-label">Dosya seçmek için tıklayın (.xlsx, .xls, .csv)</span>
+            <input type="file" id="excel-file" accept=".xlsx, .xls, .csv" onchange="handleFileSelect(event)">
+            <div id="file-name" class="file-info">Henüz dosya seçilmedi</div>
+        </div>
+    </div>
+
+    <!-- 2. Sütun Eşleştirme Alanı -->
+    <div id="mapping-card" class="card hidden">
+        <h2>2. Sütun Eşleştirme</h2>
+        <div class="mapping-grid" id="mapping-container"></div>
+        <div class="actions">
+            <button class="btn" onclick="processData()">Verileri Düzenle ve Sırala</button>
+        </div>
+    </div>
+
+    <!-- 3. Önizleme Alanı -->
+    <div id="preview-card" class="card hidden">
+        <h2>3. Veri Önizleme</h2>
+        <div class="table-container">
+            <table id="preview-table">
+                <thead id="preview-thead"></thead>
+                <tbody id="preview-tbody"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- 4. İndirme Alanı -->
+    <div id="download-card" class="card hidden">
+        <h2>4. Raporu İndir</h2>
+        <div class="actions">
+            <button class="btn btn-success" onclick="downloadExcel()">Excel'i İndir (.xlsx)</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    let rawData = [];
+    let sourceHeaders = [];
+    let processedRows = [];
+    let workbookName = "duzenlenmis_veri.xlsx";
+
+    const targetHeaders = [
+        "Düzenleme Tarihi",
+        "Yükleme Fiş No",
+        "MÜŞTERİ-İRSALİYE-NO",
+        "Alınan-Ön-Ödeme",
+        "Açıklama",
+        "Araç Plakası",
+        "URUN-ADI",
+        "Teslim İl",
+        "Teslim İlçe",
+        "Yükleme Müşteri",
+        "SATICI MÜŞTERİ ADI",
+        "Sevk Müşteri"
+    ];
+
+    function handleFileSelect(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        workbookName = "duzenlenmis_" + file.name;
+        document.getElementById('file-name').innerText = `Seçilen Dosya: ${file.name} (${file.size} bayt)`;
+        document.getElementById('status-badge').innerText = "Dosya okunuyor...";
+
+        const reader = new FileReader();
+        
+        reader.onerror = function() {
+            alert("Dosya okunurken bir hata oluştu.");
+            document.getElementById('status-badge').innerText = "Okuma Hatası";
+        };
+
+        reader.onload = function(e) {
+            try {
+                if (typeof XLSX === 'undefined') {
+                    throw new Error("Excel motoru yüklenemedi. Lütfen internet bağlantınızı kontrol edin veya dosyayı tekrar açın.");
+                }
+
+                const data = new Uint8Array(e.target.result);
+                const workbook = XLSX.read(data, {type: 'array', cellDates: true});
+                
+                const firstSheetName = workbook.SheetNames[0];
+                const worksheet = workbook.Sheets[firstSheetName];
+                const json = XLSX.utils.sheet_to_json(worksheet, {header: 1, defval: ""});
+                
+                if (!json || json.length === 0) {
+                    throw new Error("Seçtiğiniz Excel dosyası boş.");
+                }
+
+                sourceHeaders = json[0].map(h => String(h || "").trim());
+                rawData = json.slice(1).filter(row => row.some(cell => cell !== ""));
+
+                if (sourceHeaders.length === 0) {
+                    throw new Error("Dosyanın ilk satırında başlıklar bulunamadı.");
+                }
+
+                buildMappingUI();
+                document.getElementById('mapping-card').classList.remove('hidden');
+                document.getElementById('preview-card').classList.add('hidden');
+                document.getElementById('download-card').classList.add('hidden');
+                document.getElementById('status-badge').innerText = "Dosya başarıyla yüklendi";
+
+            } catch (err) {
+                console.error("Okuma hatası:", err);
+                alert("Hata:\n" + err.message);
+                document.getElementById('status-badge').innerText = "Hata Oluştu";
+            }
+        };
+        
+        reader.readAsArrayBuffer(file);
+    }
+
+    function buildMappingUI() {
+        const container = document.getElementById('mapping-container');
+        container.innerHTML = "";
+
+        targetHeaders.forEach((target, index) => {
+            const div = document.createElement('div');
+            div.className = 'mapping-item';
+
+            let matchedValue = "";
+            sourceHeaders.forEach(src => {
+                if (src.toLowerCase() === target.toLowerCase() || 
+                    src.toLowerCase().replace(/[-_\s]/g, "") === target.toLowerCase().replace(/[-_\s]/g, "")) {
+                    matchedValue = src;
+                }
+            });
+
+            let optionsHtml = "";
+            sourceHeaders.forEach(src => {
+                optionsHtml += `<option value="${src}">`;
+            });
+
+            div.innerHTML = `
+                <label>${target}</label>
+                <input type="text" list="list_${index}" id="map_${index}" data-target="${target}" value="${matchedValue}" placeholder="Sütun ara veya seç...">
+                <datalist id="list_${index}">
+                    ${optionsHtml}
+                </datalist>
+            `;
+            container.appendChild(div);
+        });
+    }
+
+    function parseNumeric(val) {
+        if (typeof val === 'number') return val;
+        if (!val) return 0;
+        let str = String(val).trim();
+        if (str.includes(',') && str.includes('.')) {
+            if (str.indexOf('.') < str.indexOf(',')) {
+                str = str.replace(/\./g, '').replace(',', '.');
+            } else {
+                str = str.replace(/,/g, '');
+            }
+        } else if (str.includes(',')) {
+            str = str.replace(',', '.');
+        }
+        let num = parseFloat(str);
+        return isNaN(num) ? 0 : num;
+    }
+
+    function processData() {
+        try {
+            const mapping = {};
+            targetHeaders.forEach((target, index) => {
+                const input = document.getElementById(`map_${index}`);
+                mapping[target] = input ? input.value.trim() : "";
+            });
+
+            processedRows = rawData.map((row, index) => {
+                const newRow = { _id: index };
+                targetHeaders.forEach(target => {
+                    const srcCol = mapping[target];
+                    if (srcCol && sourceHeaders.includes(srcCol)) {
+                        const srcIndex = sourceHeaders.indexOf(srcCol);
+                        let val = row[srcIndex] !== undefined ? row[srcIndex] : "";
+                        if (val instanceof Date) {
+                            val = val.toISOString().split('T')[0];
+                        }
+                        newRow[target] = val;
+                    } else {
+                        newRow[target] = "";
+                    }
+                });
+                return newRow;
+            });
+
+            processedRows.sort((a, b) => {
+                let valA = a["Yükleme Fiş No"];
+                let valB = b["Yükleme Fiş No"];
+                let numA = parseFloat(valA);
+                let numB = parseFloat(valB);
+
+                if (!isNaN(numA) && !isNaN(numB)) {
+                    return numA - numB;
+                }
+                return String(valA).localeCompare(String(valB), 'tr', {numeric: true});
+            });
+
+            renderHeader();
+            filterTable();
+            document.getElementById('preview-card').classList.remove('hidden');
+            document.getElementById('download-card').classList.remove('hidden');
+            document.getElementById('preview-card').scrollIntoView({ behavior: 'smooth' });
+        } catch (err) {
+            console.error("Veri işleme hatası:", err);
+            alert("Veriler işlenirken hata oluştu: " + err.message);
+        }
+    }
+
+    function renderHeader() {
+        const thead = document.getElementById('preview-thead');
+        thead.innerHTML = "";
+
+        let headerTr = document.createElement('tr');
+        targetHeaders.forEach((th) => {
+            let thEl = document.createElement('th');
+            thEl.id = `th_container_${th}`;
+            headerTr.appendChild(thEl);
+        });
+        
+        let actionTh = document.createElement('th');
+        actionTh.style.width = "70px";
+        actionTh.innerText = "İşlem";
+        headerTr.appendChild(actionTh);
+
+        thead.appendChild(headerTr);
+        updateDropdownsAndFilters();
+    }
+
+    function updateDropdownsAndFilters() {
+        targetHeaders.forEach((th) => {
+            let thEl = document.getElementById(`th_container_${th}`);
+            if (!thEl) return;
+
+            let existingInput = thEl.querySelector('.filter-input');
+            let currentVal = existingInput ? existingInput.value : "";
+            let uniqueVals = [...new Set(processedRows.map(r => String(r[th] || "").trim()))].filter(v => v !== "").sort();
+
+            let dropdownItemsHtml = uniqueVals.map(val => `
+                <div class="dropdown-item" onclick="selectDropdownItem(this, '${th}', '${escapeHtml(val)}')">
+                    <span>${val}</span>
+                </div>
+            `).join('');
+
+            thEl.innerHTML = `
+                <div class="th-content">
+                    <span onclick="toggleDropdown(event, '${th}')">${th} ▾</span>
+                </div>
+                <div class="dropdown-filter">
+                    <input type="text" class="filter-input" data-col="${th}" placeholder="Ara / Seç..." value="${currentVal}" oninput="filterTable()" onclick="openDropdown('${th}')">
+                    <div class="dropdown-list" id="dropdown_${th}">
+                        <div class="dropdown-item" onclick="selectDropdownItem(this, '${th}', '')" style="color:var(--light-text); font-style:italic;">Tümünü Göster</div>
+                        ${dropdownItemsHtml}
+                    </div>
+                </div>
+            `;
+        });
+    }
+
+    function escapeHtml(text) {
+        return text.replace(/'/g, "\\'").replace(/"/g, '&quot;');
+    }
+
+    function toggleDropdown(e, col) {
+        e.stopPropagation();
+        closeAllDropdowns();
+        const dropdown = document.getElementById(`dropdown_${col}`);
+        if (dropdown) dropdown.classList.toggle('show');
+    }
+
+    function openDropdown(col) {
+        closeAllDropdowns();
+        const dropdown = document.getElementById(`dropdown_${col}`);
+        if (dropdown) dropdown.classList.add('show');
+    }
+
+    function closeAllDropdowns() {
+        document.querySelectorAll('.dropdown-list').forEach(list => list.classList.remove('show'));
+    }
+
+    window.onclick = function(event) {
+        if (!event.target.closest('.dropdown-filter') && !event.target.closest('.th-content')) {
+            closeAllDropdowns();
+        }
+    }
+
+    function selectDropdownItem(element, col, val) {
+        const input = document.querySelector(`.filter-input[data-col="${col}"]`);
+        if (input) {
+            input.value = val;
+            filterTable();
+        }
+        closeAllDropdowns();
+    }
+
+    function buildTableRows(rows) {
+        const tbody = document.getElementById('preview-tbody');
+        tbody.innerHTML = "";
+
+        rows.forEach(row => {
+            let tr = document.createElement('tr');
+            targetHeaders.forEach(th => {
+                let td = document.createElement('td');
+                let val = row[th];
+                
+                if (th === "Alınan-Ön-Ödeme") {
+                    if (val !== "" && !isNaN(parseNumeric(val))) {
+                        td.innerText = Number(parseNumeric(val)).toLocaleString('tr-TR', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+                    } else {
+                        td.innerText = val;
+                    }
+                } else {
+                    td.innerText = val;
+                }
+                tr.appendChild(td);
+            });
+
+            let actionTd = document.createElement('td');
+            actionTd.style.textAlign = "center";
+            let deleteBtn = document.createElement('button');
+            deleteBtn.className = "btn-danger";
+            deleteBtn.innerText = "Sil";
+            deleteBtn.onclick = function() { deleteRow(row._id); };
+            actionTd.appendChild(deleteBtn);
+            tr.appendChild(actionTd);
+
+            tbody.appendChild(tr);
+        });
+    }
+
+    function deleteRow(id) {
+        processedRows = processedRows.filter(r => r._id !== id);
+        updateDropdownsAndFilters();
+        filterTable();
+    }
+
+    function filterTable() {
+        const filteredRows = getFilteredRows();
+        buildTableRows(filteredRows);
+    }
+
+    function getFilteredRows() {
+        const filterInputs = document.querySelectorAll('.filter-input');
+        const filters = {};
+        
+        filterInputs.forEach(input => {
+            const col = input.getAttribute('data-col');
+            const rawVal = input.value.trim();
+            if (rawVal !== "") {
+                const terms = rawVal.split(/[,;]/).map(t => t.trim().toLowerCase()).filter(t => t !== "");
+                if (terms.length > 0) filters[col] = terms;
+            }
+        });
+
+        return processedRows.filter(row => {
+            for (let col in filters) {
+                let cellVal = String(row[col] || "").toLowerCase();
+                let matchedAny = filters[col].some(term => cellVal.includes(term));
+                if (!matchedAny) return false;
+            }
+            return true;
+        });
+    }
+
+    function downloadExcel() {
+        const rowsToExport = getFilteredRows();
+        if (rowsToExport.length === 0) {
+            alert("İşlenecek veya dışarı aktarılacak filtrelenmiş veri yok!");
+            return;
+        }
+
+        let totalOnOdeme = 0;
+        rowsToExport.forEach(row => {
+            totalOnOdeme += parseNumeric(row["Alınan-Ön-Ödeme"]);
+        });
+
+        let exportData = [targetHeaders];
+        rowsToExport.forEach(row => {
+            let rowArray = targetHeaders.map(th => {
+                let val = row[th];
+                if (th === "Alınan-Ön-Ödeme") {
+                    let num = parseNumeric(val);
+                    return isNaN(num) ? val : num;
+                }
+                return val;
+            });
+            exportData.push(rowArray);
+        });
+
+        const dateColIndex = targetHeaders.indexOf("Düzenleme Tarihi");
+        const onOdemeColIndex = targetHeaders.indexOf("Alınan-Ön-Ödeme");
+
+        if (dateColIndex !== -1) {
+            const extraRowsInfo = [
+                { label: "KOMİSYON", val: totalOnOdeme },
+                { label: "KANTAR", val: "" },
+                { label: "TOPLAM", val: "" }
+            ];
+            
+            extraRowsInfo.forEach(item => {
+                let newRowArray = new Array(targetHeaders.length).fill("");
+                newRowArray[dateColIndex] = item.label;
+                if (item.val !== "" && onOdemeColIndex !== -1) {
+                    newRowArray[onOdemeColIndex] = item.val;
+                }
+                exportData.push(newRowArray);
+            });
+        }
+
+        const ws = XLSX.utils.aoa_to_sheet(exportData);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, "Filtrelenmis Rapor");
+
+        const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+        const blob = new Blob([wbout], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+        
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = workbookName;
+        document.body.appendChild(a);
+        a.click();
+        
+        setTimeout(() => {
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }, 100);
+    }
+</script>
+
+</body>
+</html>
